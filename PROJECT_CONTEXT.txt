@@ -1,0 +1,40 @@
+# Project Context: Parallel Assistant (Electron Overlay MVP)
+
+## Overview
+This project is an Electron-based desktop overlay application designed to be "Always On" and provide persistent assistance capabilities. It features a transparent, click-through overlay window that covers the entire main screen.
+
+## Current Status
+- **Phase**: MVP Development / Debugging
+- **Core Features**:
+  - Full-screen transparent overlay.
+  - Floating Control Panel for interaction.
+  - "Intelligent Click-Through": Interactive elements catch clicks, empty space passes clicks to desktop.
+  - **Hotkey**: `Control+Alt+Space` toggles visibility.
+  - **Emergency Hotkey**: `Control+Alt+Escape` force-hides the overlay.
+  - **Default State**: Visible on launch for development.
+- **Tech Stack**:
+  - Electron (Main process)
+  - React + TypeScript (Renderer)
+  - Vite (Build tool)
+
+## Key Components
+- **Main Process (`main.ts`)**:
+  - Manages `BrowserWindow` state (always on top, transparent, click-through logic).
+  - Handles global shortcuts (`Control+Alt+Space`).
+  - Bridge for IPC events (`set-click-through`, `hide-overlay`).
+- **Renderer (`App.tsx` & Components)**:
+  - `OverlayRoot`: Main container (transparent).
+  - `FloatingPanel`: Draggable* (planned) control panel. Manage interaction state.
+  - `AgentCursor`: Visual simulation of an AI cursor.
+  - `HighlightBox`: Visual simulation of UI highlighting.
+
+## Recent Changes
+- Fixed `Control+Alt` crash by changing hotkey to `Control+Alt+Space`.
+- Implemented "Intelligent Click-Through": The main window ignores mouse events by default (forwarding them). The Renderer detects mouse enter/leave on the `FloatingPanel` to toggle input capturing.
+- Removed background dimming to ensure true transparency.
+- prevented minimization and set window type to `toolbar`.
+- Moved `index.html` to root for Vite compatibility.
+
+## Known Issues / TODOs
+- "Draggable" implementation for FloatingPanel is not yet fully linked to window movement (requires IPC).
+- Verify multi-monitor support (currently target primary display).

@@ -1,0 +1,217 @@
+/* Design System Variables (Zinc-like Palette) */
+:root {
+  --bg-primary: #09090b;   /* Zinc 950 */
+  --bg-secondary: #27272a; /* Zinc 800 */
+  --bg-hover: #27272a;     /* Zinc 800 */
+  --text-primary: #fafafa; /* Zinc 50 */
+  --text-secondary: #a1a1aa; /* Zinc 400 */
+  --text-muted: #71717a;   /* Zinc 500 */
+  --border: #27272a;       /* Zinc 800 */
+  --radius: 0.75rem;       /* 12px */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  --accent: #fafafa;
+  --accent-foreground: #18181b;
+  
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fef2f2;
+}
+
+/* Reset & Base */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+/* Overlay Container */
+.overlay-root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background-color: transparent; /* Fully transparent */
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+  pointer-events: auto; 
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 60px;
+}
+
+.overlay-root.visible {
+  opacity: 1;
+}
+
+/* Floating Panel (Card Style) */
+.floating-panel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 320px;
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.5), 
+    0 4px 6px -2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05); /* Inner stroke */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  /* Ensure it feels solid on top of everything */
+}
+
+/* Header / Title */
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* Status Row */
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background-color: rgba(255,255,255, 0.03);
+  border-radius: calc(var(--radius) - 4px);
+  font-weight: 500;
+}
+
+.hotkey-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* Button Group */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 6px);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button:hover {
+  background-color: var(--bg-hover);
+}
+
+button:active {
+  transform: scale(0.99);
+  background-color: var(--bg-secondary);
+}
+
+/* Danger Button (Stop) */
+button.danger {
+  color: #f87171; /* Red 400 */
+}
+
+button.danger:hover {
+  background-color: rgba(127, 29, 29, 0.2);
+  border-color: rgba(127, 29, 29, 0.2);
+}
+
+/* Badges */
+.badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 9999px; /* Pill */
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Error Box */
+.error-box {
+  background: rgba(127, 29, 29, 0.1);
+  border: 1px solid rgba(127, 29, 29, 0.2);
+  color: #fca5a5;
+  font-size: 0.75rem;
+  padding: 12px;
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+
+/* Agent Cursor - Keep distinctive visual */
+.agent-cursor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--text-primary);
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.agent-cursor::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Highlight Box */
+.highlight-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 200px;
+  border: 2px solid var(--text-primary);
+  border-radius: var(--radius);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 12px;
+  /* Minimal look */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5); 
+}
+
+.highlight-label {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
