@@ -1,217 +1,152 @@
-/* Design System Variables (Zinc-like Palette) */
+/* Cursor-Centric & Liquid Glass Styles */
 :root {
-  --bg-primary: #09090b;   /* Zinc 950 */
-  --bg-secondary: #27272a; /* Zinc 800 */
-  --bg-hover: #27272a;     /* Zinc 800 */
-  --text-primary: #fafafa; /* Zinc 50 */
-  --text-secondary: #a1a1aa; /* Zinc 400 */
-  --text-muted: #71717a;   /* Zinc 500 */
-  --border: #27272a;       /* Zinc 800 */
-  --radius: 0.75rem;       /* 12px */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  
-  --accent: #fafafa;
-  --accent-foreground: #18181b;
-  
-  --destructive: #7f1d1d;
-  --destructive-foreground: #fef2f2;
+  --glass-surface: rgba(10, 10, 12, 0.95); 
+  --glass-translucent: rgba(20, 20, 22, 0.65); /* More see-through */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5);
+  --accent-color: #3b82f6; 
 }
 
-/* Reset & Base */
 body, html, #root {
-  margin: 0;
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  overflow: hidden; user-select: none;
+  font-family: 'Inter', sans-serif;
+  color: white;
+}
+
+.overlay-root {
+  width: 100vw; height: 100vh; position: relative;
+  background: transparent; pointer-events: none;
+}
+
+/* DevTools (Top-Left) */
+.devtools-overlay {
+  position: absolute; top: 12px; left: 12px; width: 220px;
+  background: var(--glass-translucent); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+  pointer-events: auto; z-index: 9999;
+}
+.debug-header { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; }
+.debug-row { display: flex; gap: 6px; }
+.devtools-overlay button {
+  background: rgba(255,255,255,0.1); border: none; radius: 4px;
+  color: #ddd; font-size: 0.75rem; padding: 6px; flex: 1; cursor: pointer;
+  border-radius: 6px; transition: background 0.2s;
+}
+.devtools-overlay button:hover { background: rgba(255,255,255,0.25); color: white; }
+.devtools-overlay button.danger { color: #fca5a5; background: rgba(127, 29, 29, 0.3); }
+
+/* =========================================
+   Agent Cursor Hub - Compact Wispr
+   ========================================= */
+.agent-hub {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5000;
+  pointer-events: auto;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  transition: 
+    width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-radius 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.4s, border 0.4s,
+    top 0.2s ease-out, left 0.2s ease-out; 
+}
+
+/* 1. IDLE: Small Dot */
+.agent-hub.mode-idle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* 2. LISTENING / PILL: Compact Translucent */
+.agent-hub.mode-listening {
+  width: 80px;  /* Much smaller */
+  height: 48px;
+  border-radius: 24px;
+  
+  /* Translucent Liquid Style */
+  background: var(--glass-translucent);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(255,255,255,0.05); /* Subtle Outline */
+    
   padding: 0;
+  justify-content: center; /* Center the waveform */
+}
+
+/* 3. PROCESSING */
+.agent-hub.mode-processing {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--glass-translucent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+}
+
+/* 4. ACTING */
+.agent-hub.mode-acting {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6; 
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+  border: 2px solid white;
+}
+
+/* Pill Inner Layout */
+.pill-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  color: var(--text-primary);
-  user-select: none;
+  animation: fade-in 0.3s forwards;
 }
 
-/* Overlay Container */
-.overlay-root {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-  background-color: transparent; /* Fully transparent */
-  opacity: 0;
-  transition: opacity 0.2s ease-out;
-  pointer-events: auto; 
+.voice-visualizer {
+  height: 30px;
+  width: 50px; /* Fits nicely in 80px pill */
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 60px;
 }
 
-.overlay-root.visible {
-  opacity: 1;
-}
-
-/* Floating Panel (Card Style) */
-.floating-panel {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  width: 320px;
-  box-shadow: 
-    0 10px 15px -3px rgba(0, 0, 0, 0.5), 
-    0 4px 6px -2px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05); /* Inner stroke */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-  /* Ensure it feels solid on top of everything */
-}
-
-/* Header / Title */
-.title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-/* Status Row */
-.status-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  padding: 8px 12px;
-  background-color: rgba(255,255,255, 0.03);
-  border-radius: calc(var(--radius) - 4px);
-  font-weight: 500;
-}
-
-.hotkey-info {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-/* Button Group */
-.btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-button {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius) - 6px);
-  padding: 8px 12px;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-align: left;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-button:hover {
-  background-color: var(--bg-hover);
-}
-
-button:active {
-  transform: scale(0.99);
-  background-color: var(--bg-secondary);
-}
-
-/* Danger Button (Stop) */
-button.danger {
-  color: #f87171; /* Red 400 */
-}
-
-button.danger:hover {
-  background-color: rgba(127, 29, 29, 0.2);
-  border-color: rgba(127, 29, 29, 0.2);
-}
-
-/* Badges */
-.badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: 9999px; /* Pill */
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-/* Error Box */
-.error-box {
-  background: rgba(127, 29, 29, 0.1);
-  border: 1px solid rgba(127, 29, 29, 0.2);
-  color: #fca5a5;
-  font-size: 0.75rem;
-  padding: 12px;
-  border-radius: var(--radius);
-  margin-top: 8px;
-}
-
-/* Agent Cursor - Keep distinctive visual */
-.agent-cursor {
-  position: absolute;
-  width: 20px;
-  height: 20px;
+/* Spinner */
+.loading-spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: #3b82f6;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid var(--text-primary);
-  pointer-events: none;
-  z-index: 1000;
-  transform: translate(-50%, -50%);
-  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+  animation: spin 1s linear infinite;
 }
 
-.agent-cursor::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
+@keyframes fade-in { 0% { opacity:0; } 100% { opacity:1; } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* Highlight Box */
 .highlight-box {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 300px;
-  height: 200px;
-  border: 2px solid var(--text-primary);
-  border-radius: var(--radius);
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 12px;
-  /* Minimal look */
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5); 
-}
-
-.highlight-label {
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  font-weight: 600;
-  padding: 4px 10px;
+  border: 2px solid var(--accent-color);
+  background: rgba(59, 130, 246, 0.1);
   border-radius: 6px;
-  font-size: 0.75rem;
+  pointer-events: none;
+}
+.highlight-label {
+  position: absolute; bottom: 100%; left: 0;
+  background: var(--accent-color); color: white;
+  padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;
+  margin-bottom: 4px;
 }

@@ -101,8 +101,19 @@ function setVisibility(show) {
     }
     broadcastState();
 }
-function toggleOverlay() {
-    setVisibility(!state.visible);
+// Toggle Agent Listening (Voice Mode) - Window stays visible
+function toggleAgentListening() {
+    if (!win)
+        return;
+    // Ensure window is shown
+    if (!win.isVisible()) {
+        setVisibility(true);
+    }
+    // Do NOT force blocking here. We rely on Component Hover logic.
+    // win.setIgnoreMouseEvents(false); <-- REMOVED
+    win.focus();
+    // Send Toggle Signal to Renderer
+    win.webContents.send('agent-toggle-listening');
 }
 function emergencyHide() {
     if (state.visible) {
@@ -112,13 +123,18 @@ function emergencyHide() {
         console.log("Emergency Hide Triggered");
     }
 }
+// Handler for synchronous state request
+electron_1.ipcMain.handle('get-overlay-state', () => {
+    return state;
+});
+// App ready
 electron_1.app.whenReady().then(() => {
     createOverlay();
     // Force visibility for dev
     setVisibility(true);
     // 1. Attempt Primary Hotkey
-    const primary = 'Control+Alt+Space'; // Fixed: Ctrl+Alt is a modifier, not a trigger.
-    const success = electron_1.globalShortcut.register(primary, toggleOverlay);
+    const primary = 'Control+Alt+Space';
+    const success = electron_1.globalShortcut.register(primary, toggleAgentListening);
     if (success) {
         state.activeHotkey = primary;
         console.log(`Registered ${primary}`);
@@ -127,7 +143,7 @@ electron_1.app.whenReady().then(() => {
         // 2. Fallback
         const fallback = 'Control+Alt+S';
         console.log(`Failed to register ${primary}, trying ${fallback}`);
-        const fbSuccess = electron_1.globalShortcut.register(fallback, toggleOverlay);
+        const fbSuccess = electron_1.globalShortcut.register(fallback, toggleAgentListening);
         if (fbSuccess) {
             state.activeHotkey = fallback;
             state.lastError = `Primary hotkey (${primary}) failed. Using ${fallback}`;

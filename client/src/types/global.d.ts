@@ -9,14 +9,11 @@ export interface OverlayState {
 declare global {
   interface Window {
     overlayAPI: {
-      onState: (callback: (state: OverlayState) => void) => void;
-      onCursorDemo: (callback: () => void) => void;
-      hideOverlay: () => void;
+      getOverlayState: () => Promise<OverlayState>;
+      onStateUpdate: (callback: (state: OverlayState) => void) => () => void;
+      onAgentToggleListening: (callback: () => void) => () => void;
       hideOverlay: () => void;
       toggleClickThrough: (enabled: boolean) => void;
-      moveCursorDemo: () => void;
-      toggleHighlight: () => void;
-      setCursorVisible: (visible: boolean) => void;
     };
   }
 }

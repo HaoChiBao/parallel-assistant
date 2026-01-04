@@ -1,15 +1,26 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('overlayAPI', {
-  onState: (callback: (state: any) => void) => {
-    ipcRenderer.on('overlay-state', (_event, value) => callback(value));
+  // Sync state explicitly
+  getOverlayState: () => ipcRenderer.invoke('get-overlay-state'),
+  
+  // Listen for push updates
+  onStateUpdate: (callback: (state: any) => void) => {
+    const handler = (_event: any, value: any) => callback(value);
+    ipcRenderer.on('overlay-state', handler);
+    return () => ipcRenderer.removeListener('overlay-state', handler);
   },
-  onCursorDemo: (callback: () => void) => {
-    ipcRenderer.on('trigger-cursor-demo', () => callback());
+  
+  // Agent Activation Signal
+  onAgentToggleListening: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('agent-toggle-listening', handler);
+    return () => ipcRenderer.removeListener('agent-toggle-listening', handler);
   },
+
   hideOverlay: () => ipcRenderer.send('hide-overlay'),
   toggleClickThrough: (enabled: boolean) => ipcRenderer.send('set-click-through', enabled),
-  moveCursorDemo: () => ipcRenderer.send('demo-move-cursor'),
-  toggleHighlight: () => ipcRenderer.send('toggle-highlight'), // Just relaying intention if main needs to know, or loopback
-  setCursorVisible: (visible: boolean) => ipcRenderer.send('set-cursor-visible', visible)
+  
+  // Extra utils if needed later
+  log: (msg: string) => console.log(msg)
 });
