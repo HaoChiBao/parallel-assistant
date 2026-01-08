@@ -1,119 +1,125 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OverlayRoot } from './components/OverlayRoot';
-import { AgentCursor, AgentMode } from './components/AgentCursor';
+import { ControlPanel } from './components/ControlPanel';
 import { HighlightBox } from './components/HighlightBox';
-import { DevTools } from './components/DevTools';
 import { OverlayState } from './types/global';
+import './styles.css';
+
+// New Imports
+import { useAgentSocket } from './hooks/useAgentSocket';
+import { TaskInput } from './components/TaskInput';
+import { Timeline } from './components/Timeline';
+import { ConfirmModal } from './components/ConfirmModal';
+import { Step } from '@shared/agent/step';
 
 function App() {
-  const [overlayState, setOverlayState] = useState<OverlayState | null>(null);
-  
-  // Agent State
-  const [mode, setMode] = useState<AgentMode>('idle');
-  const [cursorPos, setCursorPos] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const [cursorVisible, setCursorVisible] = useState(true);
-  const [highlightVisible, setHighlightVisible] = useState(false);
+  const [state, setState] = useState<OverlayState>({
+    overlayVisible: true,
+    agentState: 'INACTIVE',
+    activeHotkey: '...',
+    emergencyHotkey: '...',
+    demoRunning: false,
+    lastError: null,
+    targetBox: null,
+    speed: 10,
+    clickThroughEnabled: true
+  });
 
-  // Animation Refs
-  const moveInterval = useRef<NodeJS.Timeout | null>(null);
+  const { isConnected, sendMessage, messages, sessionState } = useAgentSocket('ws://localhost:3000/ws');
+  const [pendingConfirmStep, setPendingConfirmStep] = useState<Step | null>(null);
 
   useEffect(() => {
-    // Initial sync
-    window.overlayAPI.getOverlayState().then(setOverlayState);
-
-    // Listen for updates
-    const removeStateListener = window.overlayAPI.onStateUpdate(setOverlayState);
+    const removeListener = window.overlayAPI.onStateUpdate(setState);
     
-    // Listen for Hotkey Activation (Ctrl+Alt+Space) -> TOGGLE
-    const removeToggleListener = window.overlayAPI.onAgentToggleListening(() => {
-      setMode(prevMode => {
-        if (prevMode === 'idle' || prevMode === 'processing' || prevMode === 'acting') {
-          console.log("Starting Listening...");
-          return 'listening';
-        } else {
-          console.log("Stopping Listening...");
-          return 'idle'; 
-        }
-      });
-    });
-
-    return () => {
-      removeStateListener();
-      removeToggleListener();
-      if (moveInterval.current) clearInterval(moveInterval.current);
-    };
-  }, []);
-
-  // --- MANUAL TOGGLE ---
-  // No longer auto-sequenced. Controlled by user hotkey.
-  
-  const startRandomMovement = () => {
-    if (moveInterval.current) clearInterval(moveInterval.current);
+    // Also listen for confirm requirements from messages
+    // (This is a simplified way, ideally useAgentSocket exposes this)
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.kind === 'step.proposed' && lastMsg.step.requires_confirmation) {
+        setPendingConfirmStep(lastMsg.step as Step);
+    }
     
-    let time = 0;
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    
-    moveInterval.current = setInterval(() => {
-      time += 0.05;
-      // Spiral / Orbit movement
-      const radius = 150 + Math.sin(time) * 50;
-      setCursorPos({
-        x: centerX + Math.cos(time * 2) * radius,
-        y: centerY + Math.sin(time * 2) * radius
-      });
-    }, 16); // 60fps
+    return () => removeListener();
+  }, [messages, sessionState]);
+
+  // Sync Electron State with Server State (User Override)
+  useEffect(() => {
+     if (state.agentState === 'PAUSED' && sessionState === 'ACTIVE') {
+         sendMessage({ kind: 'session.pause' });
+     }
+  }, [state.agentState, sessionState, sendMessage]);
+
+  const handleStartTask = (task: string) => {
+      window.overlayAPI.toggleActive(); // Set local ACTIVE
+      sendMessage({ kind: 'session.start', task });
   };
 
-  const stopMovement = () => {
-    if (moveInterval.current) clearInterval(moveInterval.current);
-    moveInterval.current = null;
+  const handleConfirm = (approved: boolean) => {
+      if (pendingConfirmStep) {
+          sendMessage({ kind: 'confirm.step', step_id: pendingConfirmStep.step_id, approved });
+          setPendingConfirmStep(null);
+      }
   };
 
-  // -- DevTools Handlers --
-  const handleHide = () => window.overlayAPI.hideOverlay();
-  const handleToggleHighlight = () => setHighlightVisible(p => !p);
-  const handleToggleCursorVis = () => setCursorVisible(p => !p);
-  const handleToggleClickThrough = () => {
-    const current = overlayState?.clickThroughEnabled ?? false;
-    window.overlayAPI.toggleClickThrough(!current);
-  };
+  if (!state.overlayVisible) return null;
 
   return (
-    <OverlayRoot visible={overlayState?.visible ?? true}>
+    <OverlayRoot visible={state.overlayVisible}>
+      <ControlPanel 
+        state={state} 
+        onToggleActive={() => {
+            window.overlayAPI.toggleActive();
+            if (state.agentState === 'ACTIVE') sendMessage({ kind: 'session.stop' });
+        }}
+        onResume={() => {
+            window.overlayAPI.resume();
+            sendMessage({ kind: 'session.resume' });
+        }}
+        onRunDemo={() => window.overlayAPI.toggleDemo()}
+        onHide={() => window.overlayAPI.hide()}
+        onSpeedChange={(val) => window.overlayAPI.setSpeed(val)}
+      />
+
+      {/* Connection Status */}
+      <div className="fixed bottom-2 right-2 text-xs font-mono opacity-50 text-white pointer-events-none">
+          WS: {isConnected ? 'Connected' : 'Offline'} | Agent: {sessionState}
+      </div>
       
-      {/* Persistent DevTools */}
-      <DevTools 
-        state={overlayState}
-        onHide={handleHide}
-        onToggleHighlight={handleToggleHighlight}
-        onMoveCursor={() => setMode(m => m === 'idle' ? 'listening' : 'idle')} // Manual toggle for demo
-        onToggleCursorVis={handleToggleCursorVis}
-        onToggleClickThrough={handleToggleClickThrough}
-        cursorVisible={cursorVisible}
-        highlightVisible={highlightVisible}
-      />
+      {state.agentState === 'ACTIVE' && (
+        <div className="active-gradient-overlay" />
+      )}
 
-      {/* The Agent (State Machine) */}
-      <AgentCursor 
-        x={cursorPos.x} 
-        y={cursorPos.y} 
-        visible={cursorVisible} 
-        mode={mode}
-      />
-
-      {highlightVisible && (
-        <HighlightBox 
-          x={window.innerWidth / 2 - 150} 
-          y={window.innerHeight / 2 - 100} 
-          width={300} 
-          height={200}
-          label="Target Window"
-        />
+      {state.agentState === 'ACTIVE' && (
+        <div className="active-badge">AGENT ACTIVE — WASD controls cursor</div>
       )}
       
+      {state.agentState === 'PAUSED' && (
+        <div className="paused-badge">PAUSED — move/keys detected</div>
+      )}
+
+      {/* New Agent Components */}
+      <TaskInput 
+        state={state.agentState} 
+        onStart={handleStartTask} 
+      />
+      
+      <Timeline messages={messages} state={state.agentState} />
+      
+      {pendingConfirmStep && (
+          <ConfirmModal step={pendingConfirmStep} onConfirm={handleConfirm} />
+      )}
+
+      {state.targetBox && (
+        <HighlightBox 
+          x={state.targetBox.x}
+          y={state.targetBox.y}
+          width={state.targetBox.width}
+          height={state.targetBox.height}
+          label={state.targetBox.label}
+        />
+      )}
     </OverlayRoot>
   );
 }
 
 export default App;
+

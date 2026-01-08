@@ -1,26 +1,26 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('overlayAPI', {
-  // Sync state explicitly
-  getOverlayState: () => ipcRenderer.invoke('get-overlay-state'),
+  hide: () => ipcRenderer.send('request-hide'),
+  toggleActive: () => ipcRenderer.send('request-toggle-active'),
+  resume: () => ipcRenderer.send('request-resume'),
+  toggleDemo: () => ipcRenderer.send('request-demo'),
+  setSpeed: (val: number) => ipcRenderer.send('set-speed', val),
+  setClickThrough: (enabled: boolean) => ipcRenderer.send('set-click-through', enabled),
   
-  // Listen for push updates
+  // Agent API
+  captureObservation: () => ipcRenderer.invoke('agent-capture-observation'),
+  executeAction: (step: any) => ipcRenderer.invoke('agent-execute-action', step),
+  
+  // Events
   onStateUpdate: (callback: (state: any) => void) => {
-    const handler = (_event: any, value: any) => callback(value);
-    ipcRenderer.on('overlay-state', handler);
-    return () => ipcRenderer.removeListener('overlay-state', handler);
+      const handler = (_event: any, value: any) => callback(value);
+      ipcRenderer.on('state-update', handler);
+      return () => ipcRenderer.removeListener('state-update', handler);
   },
-  
-  // Agent Activation Signal
-  onAgentToggleListening: (callback: () => void) => {
-    const handler = () => callback();
-    ipcRenderer.on('agent-toggle-listening', handler);
-    return () => ipcRenderer.removeListener('agent-toggle-listening', handler);
-  },
-
-  hideOverlay: () => ipcRenderer.send('hide-overlay'),
-  toggleClickThrough: (enabled: boolean) => ipcRenderer.send('set-click-through', enabled),
-  
-  // Extra utils if needed later
-  log: (msg: string) => console.log(msg)
+  onGlobalInput: (callback: (event: any) => void) => {
+      const handler = (_event: any, value: any) => callback(value);
+      ipcRenderer.on('input-event', handler);
+      return () => ipcRenderer.removeListener('input-event', handler);
+  }
 });

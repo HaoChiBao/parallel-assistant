@@ -3,10 +3,14 @@
     "module": "CommonJS",
     "target": "ESNext",
     "outDir": "../dist-electron",
-    "rootDir": ".",
+    "rootDir": "../../",
     "sourceMap": true,
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../../shared/*"]
+    }
   },
   "include": ["."]
 }

@@ -1,0 +1,39 @@
+# Project Vision: Parallel Assistant
+
+**North Star**: An always-on, OS-integrated AI agent that shares your peripherals to perform tangible work alongside you.
+
+## What It Is
+Parallel Assistant is a desktop overlay that allows an AI to control your **real system cursor** and keyboard. It is not just a chat window; it is a collaborative partner that lives in the "glass" above your applications, perceiving your screen and taking physical actions to complete tasks.
+
+## The Agent Loop
+To be useful, the agent must close the loop:
+1.  **Perceive**: See the screen (screenshots) and accessibility tree.
+2.  **Decide**: Plan a sequence of actions (Move, Click, Type).
+3.  **Act**: Physically control the OS input devices to execute the plan.
+4.  **Verify**: Check if the action had the intended effect.
+5.  **Recover**: Retry or ask for help if verification fails.
+
+## Why Real Cursor Control?
+-   **Tangibility**: You see exactly what the agent is doing. There is no "hidden magic" or background API calls that might fail silently.
+-   **Compatibility**: If a human can do it with a mouse and keyboard, the agent can do it. It works with *any* application.
+-   **Trust**: By sharing the same physical cursor, the user and agent have a clear hand-off. You can physically see when the agent is working and instinctively take over if needed.
+
+## User Authority & Safety
+The user is always in control.
+-   **States**:
+    -   **INACTIVE**: Asleep.
+    -   **ACTIVE**: Working. The agent owns the mouse.
+    -   **PAUSED**: The agent detected you moved the mouse or typed. It yields immediately.
+-   **Emergency Stop**: `Control+Alt+Esc` is the hard kill switch.
+
+## Near-Term MVP: The "Cursor Pilot"
+Our current focus is perfecting the **Act** layer.
+-   We have a robust Electron overlay that handles state and visualization.
+-   We have a Python sidecar that drives the real mouse.
+-   We have "Power Steering" (WASD control) and "Autopilot" (Demo Motion) to prove the capability.
+-   Crucially, we have solved the **Arbitration Problem**: differentiating agent actions from user actions to allow seamless hand-offs.
+
+## Long-Term Vision
+-   **Complex Tasks**: "Book me a flight," "Organize these files," "Fill out this form."
+-   **Safety Gating**: The agent asks for confirmation before "Committing" (e.g., clicking 'Buy').
+-   **Verification**: The agent knows when it missed a button and corrects itself.

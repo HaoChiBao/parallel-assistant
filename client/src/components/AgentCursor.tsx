@@ -9,9 +9,10 @@ interface Props {
   y: number;
   visible: boolean;
   mode: AgentMode;
+  actionState?: 'clicking' | 'dragging' | 'holding' | 'scrolling' | null;
 }
 
-export const AgentCursor: React.FC<Props> = ({ x, y, visible, mode }) => {
+export const AgentCursor: React.FC<Props> = ({ x, y, visible, mode, actionState }) => {
   const [transcript, setTranscript] = useState("Listening...");
   const recognitionRef = useRef<any>(null);
 
@@ -83,7 +84,7 @@ export const AgentCursor: React.FC<Props> = ({ x, y, visible, mode }) => {
 
   return (
     <div 
-      className={`agent-hub mode-${mode}`}
+      className={`agent-hub mode-${mode} ${actionState ? `action-${actionState}` : ''}`}
       style={{ left: x, top: y }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

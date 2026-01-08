@@ -1,40 +1,101 @@
 # Project Context: Parallel Assistant (Electron Overlay MVP)
 
 ## Overview
-This project is an Electron-based desktop overlay application designed to be "Always On" and provide persistent assistance capabilities. It features a transparent, click-through overlay window that covers the entire main screen.
+This project is an Electron-based desktop overlay application designed to be "Always On" and provide persistent assistance capabilities.
 
-## Current Status
-- **Phase**: MVP Development / Debugging
+---
+Client: Cursor Control Overlay MVP
+- **Goal**: Full-screen transparent overlay that controls the REAL OS cursor (no fake cursor).
 - **Core Features**:
-  - Full-screen transparent overlay.
-  - Floating Control Panel for interaction.
-  - "Intelligent Click-Through": Interactive elements catch clicks, empty space passes clicks to desktop.
-  - **Hotkey**: `Control+Alt+Space` toggles visibility.
-  - **Emergency Hotkey**: `Control+Alt+Escape` force-hides the overlay.
-  - **Default State**: Visible on launch for development.
+  - Agent controls physical mouse (via Python `pyautogui`).
+  - Global Input Hooks (via Python `pynput`) detect user activity.
+  - State Machine: INACTIVE -> ACTIVE -> PAUSED (on user interference).
+  - WASD controls Real Mouse when ACTIVE.
+  - "Demo Motion" (Figure-8) to prove control.
+- **Keys**:
+  - Toggle Overlay: Control+Alt+Space (or Control+Alt)
+  - Emergency Stop: Control+Alt+Escape
+  - WASD + Shift: Move Cursor (only when ACTIVE)
 - **Tech Stack**:
-  - Electron (Main process)
-  - React + TypeScript (Renderer)
-  - Vite (Build tool)
+  - Electron + React + TypeScript.
+  - **Native Interface**: Python Sidecar (`client/electron/py_mouse/mouse_server.py`) handles all OS IO to avoid Node-GYP issues on Windows.
+- **Run**:
+  - `cd client`
+  - `npm install`
+  - `pip install pynput pyautogui` (if not already installed)
+  - `npm run dev`
 
-## Key Components
-- **Main Process (`main.ts`)**:
-  - Manages `BrowserWindow` state (always on top, transparent, click-through logic).
-  - Handles global shortcuts (`Control+Alt+Space`).
-  - Bridge for IPC events (`set-click-through`, `hide-overlay`).
-- **Renderer (`App.tsx` & Components)**:
-  - `OverlayRoot`: Main container (transparent).
-  - `FloatingPanel`: Draggable* (planned) control panel. Manage interaction state.
-  - `AgentCursor`: Visual simulation of an AI cursor.
-  - `HighlightBox`: Visual simulation of UI highlighting.
+---
+---
 
-## Recent Changes
-- Fixed `Control+Alt` crash by changing hotkey to `Control+Alt+Space`.
-- Implemented "Intelligent Click-Through": The main window ignores mouse events by default (forwarding them). The Renderer detects mouse enter/leave on the `FloatingPanel` to toggle input capturing.
-- Removed background dimming to ensure true transparency.
-- prevented minimization and set window type to `toolbar`.
-- Moved `index.html` to root for Vite compatibility.
+## Client: Cursor-Control Overlay MVP (Updated Vision)
 
-## Known Issues / TODOs
-- "Draggable" implementation for FloatingPanel is not yet fully linked to window movement (requires IPC).
-- Verify multi-monitor support (currently target primary display).
+This phase establishes the Parallel Assistant as an OS-level overlay that controls the user's REAL system cursor. Unlike a passive chatbot, this agent physically interacts with the desktop to perform tasks.
+
+- **Current MVP Behavior**:
+  - **Launch**: Overlay is hidden by default.
+  - **Toggle**: `Control+Alt+Space` wakes the agent, shows the overlay, and starts the Demo.
+  - **States**: 
+    - `INACTIVE`: Hidden/Idle.
+    - `ACTIVE`: Controlling mouse, tracking WASD, running Demo.
+    - `PAUSED`: Detection of manual user input (mouse/keyboard) immediately yields control.
+  - **Controls**: `WASD` (with `Shift` for speed) moves the system cursor when `ACTIVE`.
+  - **Demo**: "figure-8" motion test with visual Target Box.
+  - **Safety**: 
+    - **Suppression Window**: 0.2s window + Distance Heuristic (15px) distinguishes agent moves from user moves.
+    - **Emergency Stop**: `Control+Alt+Escape` kills the agent.
+
+- **Architecture Overview**:
+  - **Electron Main**: Controls the transparent `BrowserWindow`, registers global hotkeys, manages the Agent State Machine (`INACTIVE` <-> `ACTIVE`), and communicates with the Python sidecar.
+  - **Python Sidecar (`mouse_server.py`)**: Handles all low-level OS IO. Uses `pyautogui` for moving the cursor and `pynput` for global hooks to detect user interference.
+  - **Preload**: Exposes secure `contextBridge` APIs for state updates.
+  - **Renderer**: React UI showing Agent Status active/paused badges, speed controls, and the Target Box visualization.
+
+- **File Map (`/client`)**:
+  - `electron/main.ts`: Entry point, window management, state machine, IPC glue.
+  - `electron/py_mouse/mouse_server.py`: Python IO Engine (Input Hooks + Cursor Control).
+  - `src/App.tsx`: Main React component, rendering UI based on state.
+  - `src/components/HighlightBox.tsx`: Visual Target Box component.
+  - `src/styles.css`: Dark theme, badges, gradient animations.
+
+- **How to Run**:
+  1. `cd client`
+  2. `pip install pynput pyautogui`
+  3. `npm run dev`
+
+- **Limitations & Next Steps**:
+  - **Multi-monitor**: Currently targets primary display.
+  - **Perception**: Needs accessibility tree integration (Screenshots implemented).
+  
+---
+
+## Phase: Agent Loop Implementation (Client-Server)
+**Status**: Implemented (Mock Brain / MVP)
+
+We have established the core Client-Server Agent architecture. The "Brain" (Server) runs independently from the "Body" (Client/Electron) to allow for heavy compute/Python environments for the AI model.
+
+- **Architecture**:
+  - **Server (`/server`)**: 
+    - Node.js + WebSocket Server.
+    - **Orchestrator**: Manages session state, step history, and message routing.
+    - **Gemini Wrapper**: Mock implementation of `decideNextStep` (Real API pending enabled keys).
+    - **Shared Types**: `@shared` contracts for `Step`, `Action`, `Observation`, `Messages`.
+  - **Client (`/client`)**:
+    - **Electron Main**: `ActionExecutor` (executes steps via Python/Native) and `ObservationCapture` (desktopCapturer).
+    - **Renderer (React)**: 
+      - `useAgentSocket`: Custom hook for WebSocket communication.
+      - `TaskInput`: Prompt interface for starting tasks.
+      - `Timeline`: Real-time log of agent thinking and steps.
+      - `ConfirmModal`: User verification flow for high-risk actions.
+
+- **Data Flow**:
+  1. User enters task in `TaskInput` -> `session.start`
+  2. Server thinks -> `step.proposed`
+  3. Client approves (if risky) -> `action.execute`
+  4. Client `ActionExecutor` runs (via Python) -> `action.result`
+  5. Repeat until `done`.
+
+- **To Run**:
+  1. **Server**: `cd server && npm run dev` (Port 3000)
+  2. **Client**: `cd client && npm run dev`
+

@@ -17,6 +17,16 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+ // Start server
+const server = app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+  console.log("Registered routes:");
+  listEndpoints(app).forEach((endpoint: any) => {
+    console.log(`  ${endpoint.methods.join(", ")} ${endpoint.path}`);
+  });
 });
+
+// Initialize WebSocket Server
+import { WSServer } from "./ws";
+new WSServer(server);
+
